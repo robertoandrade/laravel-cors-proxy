@@ -1,8 +1,7 @@
 <?php
 return [
-    'enable_filters'=>true,
-    'domain_filter'=>false,
-    'valid_requests'=>[
-
-    ]
+    'header_name'=>'X-Proxy-To',
+    'valid_requests'=>[],
+    'http_proxy'=>false,
+    'https_proxy'=>false,
 ];

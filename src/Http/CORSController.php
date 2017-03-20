@@ -15,6 +15,10 @@ use Illuminate\Routing\Controller as BaseController;
 class CORSController extends BaseController {
 
     public function index(Request $request) {
-        return CORSProxy::index($request) . ' from controller.';
+
+        $response=CORSProxy::index($request);
+        return response($response->getBody())
+            ->setStatusCode($response->getStatusCode())
+            ->withHeaders($response->getHeaders());
     }
 }

@@ -15,7 +15,7 @@ class CORSProxyServiceProvider extends ServiceProvider {
         require __DIR__ . '/Http/routes.php';
         $this->publishes([
             __DIR__ . '/config' => config_path(),
-        ],'config');
+        ], 'config');
     }
 
 }

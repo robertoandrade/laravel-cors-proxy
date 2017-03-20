@@ -1,20 +1,25 @@
 {
-    "name": "elfo404/laravel-cors-proxy",
-    "description":"A simple CORS Proxy for laravel applications",
-    "keywords": ["laravel", "cors", "proxy"],
-    "license": "MIT",
-    "authors": [
-        {
-            "name": "Giordano Ricci",
-            "email": "me@giordanoricci.com"
-        }
-    ],
-    "autoload": {
-        "psr-4": {
-            "Elfo404\\LaravelCORSProxy\\": "src/"
-        }
-    },
-    "require": {
-        "illuminate/support": "~5"
+  "name": "elfo404/laravel-cors-proxy",
+  "description": "A simple CORS Proxy for laravel applications",
+  "keywords": [
+    "laravel",
+    "cors",
+    "proxy"
+  ],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Giordano Ricci",
+      "email": "me@giordanoricci.com"
     }
+  ],
+  "autoload": {
+    "psr-4": {
+      "Elfo404\\LaravelCORSProxy\\": "src/"
+    }
+  },
+  "require": {
+    "illuminate/support": "~5",
+    "guzzlehttp/guzzle": "~6.0"
+  }
 }
