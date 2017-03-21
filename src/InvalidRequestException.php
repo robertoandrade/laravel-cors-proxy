@@ -8,7 +8,7 @@ class InvalidRequestException extends \Exception {
 
     public function __construct($uri) {
         $this->uri = $uri;
-        $this->message = "Requested URI: \"$this->uri\" is not present in valid requests configuration";
+        $this->message = "Requested URI: \"$this->uri\" is not listed as a valid request.";
     }
 
     public function __toString() {
