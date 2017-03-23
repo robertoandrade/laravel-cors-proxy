@@ -1,17 +1,18 @@
-#Laravel Cors Proxy
+# Laravel Cors Proxy
 
  A simple CORS Proxy for laravel applications 
  
  
-Intallation
-=======================
+## Installation
 
 Add the package to composer.json:
 
-	"require": {
-		...
-		"elfo404/laravel-cors-proxy": "0.1.0"
-	},
+```json
+"require": {
+	...
+	"elfo404/laravel-cors-proxy": "0.1.0"
+},
+```
 	
 Or from the command line:
 `` composer require elfo404/laravel-cors-proxy``
@@ -25,12 +26,12 @@ There is no need to add a Facade.
 You have now an endpoint for `http[s]://example.com/proxy` to submit your CORS proxied requests.
 
 
-Config
-=======================
+## Configuration
+
 
 Run `php artisan vendor:publish --provider="Elfo404\LaravelCORSProxy\CORSProxyServiceProvider" --tag=config --force` to export the default configuration in `config/cors-proxy.php`:
 
-```$php
+```php
 <?php
 return [
     'header_name'=>'X-Proxy-To',
@@ -43,11 +44,10 @@ return [
 - `valid_requests` array containing a list od URIs tha can be proxied. this is only for security reason as these endpoints ar publicly accessible.
 - `http_proxy` and `https_proxy` are self explanatory, improved doc is coming soon.
 
-Usage
-=======================
+## Usage
 
 - jQuery example (domainA.com):
-```$javascript
+```javascript
 $.ajax({
   type: "POST",
   beforeSend: function(request) {
