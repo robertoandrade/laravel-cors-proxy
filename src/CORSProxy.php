@@ -7,25 +7,86 @@ use GuzzleHttp\Psr7\Uri as Uri;
 use Illuminate\Http\Request as Request;
 use GuzzleHttp\Client as Client;
 use \GuzzleHttp\Psr7\Request as Req;
-
+use \GuzzleHttp\Psr7\Response as Res;
+use \GuzzleHttp\Psr7\BufferStream;
 
 class CORSProxy {
 
     public static function index(Request $request) {
-        $uri = new Uri($request->header(config('cors-proxy.header_name', 'X-Proxy-To'), false));
-        if (in_array($uri->__toString(), config('cors-proxy.valid_requests'))) {
+        $pathUri = preg_replace('#/proxy/(https?)/#', '$1://', $request->getPathInfo());
+        $prefix = $request->getSchemeAndHttpHost().preg_replace('#(/proxy/https?/[^/]+).*#', '$1', $request->getRequestUri());
+        $uri = new Uri($request->header(config('cors-proxy.header_name', 'X-Proxy-To'), $pathUri));
+        $proxiedUri = $uri->__toString();
+
+        if (strpos($proxiedUri, $request->getSchemeAndHttpHost()) === 0) {
+            return new Res(301, [ 'location' => $proxiedUri.'?'.$request->getQueryString() ]);
+        }
+
+        $validRequests = array_map(
+            function ($expr) {
+                if (strpos($expr, '/') === 0) {
+                    return $expr;
+                } else {
+                    return '/'.preg_replace('/\//', '\\/', $expr).'/';
+                }
+            }, 
+            config('cors-proxy.valid_requests')
+        );
+
+        if (preg_replace($validRequests, '', $proxiedUri) != $proxiedUri) {
+            $allowsRedirects = config('cors-proxy.allow_redirects', true);
             $client = new Client([
                 'base_uri' => $uri->getScheme() . "://" . $uri->getHost(),
                 'proxy' => [
                     'http' => config('cors-proxy.http_proxy', false),
                     'https' => config('cors-proxy.https_proxy', false)
                 ],
-                'timeout' => 2
+                'timeout' => config('cors-proxy.timeout', 2),
+                'allow_redirects' => $allowsRedirects,
+                'http_errors' => false,
+                'verify' => false
             ]);
-            //todo body parameters for post, put and deletes
-            $req = new Req($request->method(), $uri->getPath(), $request->headers->all());
+            $request->headers->remove('host');
+            $req = new Req($request->method(), $uri->getPath(), $request->headers->all(), $request->getContent(true));
             try {
                 $res = $client->send($req, ['query' => $request->getQueryString()]);
+                $isRedirect = $res->getStatusCode() >= 300 && $res->getStatusCode() < 400;
+
+                if ($isRedirect) {
+                    $location = $res->getHeader('location')[0];
+                    if (strpos($location, '/') === 0) {
+                        $location = $prefix.$location;
+                    } else if (strpos($location, 'http') === 0) {
+                        $location = '/proxy/'.preg_replace('#://#', '/', $location);
+                    }
+                    $res = $res->withHeader('location', $location);
+                }
+
+                if (!$allowsRedirects && $isRedirect) {
+                    $res = $res->withStatus(303);
+                }
+
+                $domain = $uri->getScheme().'://'.$uri->getAuthority();
+                $rep['/href="(?!https?:\/\/)(?!data:)(?!javascript:)(?!#)(?!\')/'] = 'href="'.$domain;
+                $rep['/src="(?!https?:\/\/)(?!data:)(?!javascript:)(?!#)(?!\')(?!\/js\/sink_j)/'] = 'src="'.$domain;
+                $rep['/src="(?!https?:\/\/)(?!data:)(?!javascript:)(?!#)(?!\')(?=\/js\/sink_j)/'] = 'src="'.$prefix;
+                //$rep['/"src",/'] = '"src","'.$domain.'"+';
+                $rep['/@import[\n+\s+]"\//'] = '@import "'.$domain;
+                $rep['/@import[\n+\s+]"\./'] = '@import "'.$domain;
+                
+                $rep['/location.protocol\+"\/\/"\+location.host\+/'] = '(/css/.test(e) ? "'.$prefix.'" : "'.$domain.'")+';
+                $rep['/("Error.*?"\+e.path)/'] = '$1+" - "+n';
+                $rep['/"\/app\/"/'] = '"'.$prefix.'/app/"';
+
+                $content = preg_replace(
+                    array_keys($rep),
+                    array_values($rep),
+                    $res->getBody()->getContents()
+                );
+
+                $body = new BufferStream();
+                $body->write($content);
+                $res = $res->withBody($body);
             } catch (ClientException $e) {
                 $res = $e->getResponse();
             }
