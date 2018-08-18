@@ -33,7 +33,19 @@ class CORSProxy {
             config('cors-proxy.valid_requests')
         );
 
+        $requestHandlers = config('cors-proxy.request_handlers', []);
+
         if (preg_replace($validRequests, '', $proxiedUri) != $proxiedUri) {
+            $requestHandler = array_filter(array_keys($requestHandlers), function ($expr) use ($proxiedUri) {
+                return preg_replace($expr, '', $proxiedUri) != $proxiedUri;
+            });
+            if (count($requestHandler) == 1) {
+                $requestHandler = $requestHandlers[$requestHandler[0]];
+                $content = $requestHandler($proxiedUri, $request);
+
+                return new Res(200, [], $content);
+            }
+
             $allowsRedirects = config('cors-proxy.allow_redirects', true);
             $client = new Client([
                 'base_uri' => $uri->getScheme() . "://" . $uri->getHost(),
@@ -67,16 +79,25 @@ class CORSProxy {
                 }
 
                 $domain = $uri->getScheme().'://'.$uri->getAuthority();
-                $rep['/href="(?!https?:\/\/)(?!data:)(?!javascript:)(?!#)(?!\')/'] = 'href="'.$domain;
-                $rep['/src="(?!https?:\/\/)(?!data:)(?!javascript:)(?!#)(?!\')(?!\/js\/sink_j)/'] = 'src="'.$domain;
-                $rep['/src="(?!https?:\/\/)(?!data:)(?!javascript:)(?!#)(?!\')(?=\/js\/sink_j)/'] = 'src="'.$prefix;
-                //$rep['/"src",/'] = '"src","'.$domain.'"+';
+
+                $exclusionExpr = '(?!https?:|data:|javascript:|#|\')';
+                $proxyHrefs = str_replace('/', '\/', implode('|', config('cors-proxy.proxy_hrefs', [])));
+                $proxyLazyHrefs = str_replace('/', '\/', implode('|', config('cors-proxy.proxy_lazy_hrefs', ['.'])));
+                $proxyStringHrefs = str_replace('/', '\/', implode('|', config('cors-proxy.proxy_string_hrefs', [])));
+                $bypassExpr = '(?!'.$proxyHrefs.')';
+                $forceProxyExpr = '(?='.$proxyHrefs.')';
+
+                $rep['/href="'.$exclusionExpr.$bypassExpr.'/']      = 'href="'.$domain;
+                $rep['/href="'.$exclusionExpr.$forceProxyExpr.'/']  = 'href="'.$prefix;
+                $rep['/src="'.$exclusionExpr.$bypassExpr.'/']       = 'src="'.$domain;
+                $rep['/src="'.$exclusionExpr.$forceProxyExpr.'/']   = 'src="'.$prefix;
                 $rep['/@import[\n+\s+]"\//'] = '@import "'.$domain;
                 $rep['/@import[\n+\s+]"\./'] = '@import "'.$domain;
                 
-                $rep['/location.protocol\+"\/\/"\+location.host\+/'] = '(/css/.test(e) ? "'.$prefix.'" : "'.$domain.'")+';
-                $rep['/("Error.*?"\+e.path)/'] = '$1+" - "+n';
-                $rep['/"\/app\/"/'] = '"'.$prefix.'/app/"';
+                $rep['/location.protocol\+"\/\/"\+location.host\+/'] = '(/'.$proxyLazyHrefs.'/.test(e) ? "'.$prefix.'" : "'.$domain.'")+';
+                if (strlen($proxyStringHrefs) > 0) {
+                    $rep['/"('.$proxyStringHrefs.')"/'] = '"'.$prefix.'$1"';
+                }
 
                 $content = preg_replace(
                     array_keys($rep),
