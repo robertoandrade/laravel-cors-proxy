@@ -1,5 +1,5 @@
 {
-  "name": "elfo404/laravel-cors-proxy",
+  "name": "robertoandrade/laravel-cors-proxy",
   "description": "A simple CORS Proxy for laravel applications",
   "keywords": [
     "laravel",
