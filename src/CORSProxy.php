@@ -14,11 +14,12 @@ class CORSProxy {
 
     public static function index(Request $request) {
         $pathUri = preg_replace('#/proxy/(https?)/#', '$1://', $request->getPathInfo());
-        $prefix = $request->getSchemeAndHttpHost().preg_replace('#(/proxy/https?/[^/]+).*#', '$1', $request->getRequestUri());
+        $schemeAndHost = preg_replace('#https:#', '', $request->getSchemeAndHttpHost());
+        $prefix = $schemeAndHost.preg_replace('#(/proxy/https?/[^/]+).*#', '$1', $request->getRequestUri());
         $uri = new Uri($request->header(config('cors-proxy.header_name', 'X-Proxy-To'), $pathUri));
         $proxiedUri = $uri->__toString();
 
-        if (strpos($proxiedUri, $request->getSchemeAndHttpHost()) === 0) {
+        if (strpos($proxiedUri, $schemeAndHost) === 0) {
             return new Res(301, [ 'location' => $proxiedUri.'?'.$request->getQueryString() ]);
         }
 
@@ -92,6 +93,8 @@ class CORSProxy {
                 if (!$allowsRedirects && $isRedirect) {
                     $res = $res->withStatus(303);
                 }
+
+                $res = $res->withoutHeader('transfer-encoding');
 
                 $domain = $uri->getScheme().'://'.$uri->getAuthority();
 
