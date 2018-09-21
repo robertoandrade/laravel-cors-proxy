@@ -60,11 +60,18 @@ class CORSProxy {
             ]);
             $request->headers->remove('host');
 
-            if (isset($_COOKIE['skipCookies'])) {
+            if (isset($_COOKIE['skipCookies']) && 
+                ($_COOKIE['skipCookies'] == 'true' || 
+                 $_COOKIE['skipCookies'] == rawurldecode($request->getQueryString()) &&
+                 !isset($_COOKIE[$_COOKIE['skipCookiesIfNoCookie']])
+                )) {
                 $request->headers->remove('cookie');
 
                 unset($_COOKIE['skipCookies']);
                 setcookie('skipCookies', null, -1);
+
+                unset($_COOKIE['skipCookiesIfNoCookie']);
+                setcookie('skipCookiesIfNoCookie', null, -1);
             }
 
             $req = new Req($request->method(), $uri->getPath(), $request->headers->all(), $request->getContent(true));
