@@ -59,6 +59,14 @@ class CORSProxy {
                 'verify' => false
             ]);
             $request->headers->remove('host');
+
+            if (isset($_COOKIE['skipCookies'])) {
+                $request->headers->remove('cookie');
+
+                unset($_COOKIE['skipCookies']);
+                setcookie('skipCookies', null, -1);
+            }
+
             $req = new Req($request->method(), $uri->getPath(), $request->headers->all(), $request->getContent(true));
             try {
                 $res = $client->send($req, ['query' => $request->getQueryString()]);
