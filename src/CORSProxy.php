@@ -19,7 +19,7 @@ class CORSProxy {
         $uri = new Uri($request->header(config('cors-proxy.header_name', 'X-Proxy-To'), $pathUri));
         $proxiedUri = $uri->__toString();
 
-        if (strpos($proxiedUri, $schemeAndHost) === 0) {
+        if (strpos($proxiedUri, $schemeAndHost) > 0) {
             return new Res(301, [ 'location' => $proxiedUri.'?'.$request->getQueryString() ]);
         }
 
