@@ -14,7 +14,7 @@ class CORSProxy {
 
     public static function index(Request $request) {
         $pathUri = preg_replace('#/proxy/(https?)/#', '$1://', $request->getPathInfo());
-        $schemeAndHost = preg_replace('#https?:#', 'https:', $request->getSchemeAndHttpHost());
+        $schemeAndHost = preg_replace('#https?:#', '', $request->getSchemeAndHttpHost());
         $prefix = $schemeAndHost.preg_replace('#(/proxy/https?/[^/]+).*#', '$1', $request->getRequestUri());
         $uri = new Uri($request->header(config('cors-proxy.header_name', 'X-Proxy-To'), $pathUri));
         $proxiedUri = $uri->__toString();
