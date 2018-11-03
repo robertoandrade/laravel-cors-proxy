@@ -78,6 +78,7 @@ class CORSProxy {
 
                 if ($isRedirect) {
                     $location = $res->getHeader('location')[0];
+                    $location = str_replace('.com', '.app', $location);
                     if (strpos($location, '/') === 0) {
                         $location = $prefix.$location;
                     } else if (strpos($location, 'http') === 0) {
