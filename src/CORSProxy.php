@@ -60,6 +60,7 @@ class CORSProxy {
                 'verify' => false
             ]);
             $request->headers->remove('host');
+            $request->headers->remove('accept-encoding');
 
             if (isset($_COOKIE['skipCookies']) && 
                 ($_COOKIE['skipCookies'] == 'true' || 
@@ -71,7 +72,7 @@ class CORSProxy {
                 setcookie('skipCookies', null, -1);
             }
 
-            $req = new Req($request->method(), $uri->getPath(), $request->headers->all(), $request->getContent(true));
+            $req = new Req($request->method(), $uri->getPath(), $request->headers->all(), $request->method() == 'GET' ? null : $request->getContent(true));
             try {
                 $res = $client->send($req, ['query' => $request->getQueryString()]);
                 $isRedirect = $res->getStatusCode() >= 300 && $res->getStatusCode() < 400;
@@ -108,6 +109,7 @@ class CORSProxy {
                 $rep['/src="'.$exclusionExpr.$forceProxyExpr.'/']   = 'src="'.$prefix;
                 $rep['/@import[\n+\s+]"\//'] = '@import "'.$domain;
                 $rep['/@import[\n+\s+]"\./'] = '@import "'.$domain;
+                $rep['/@font-face \{/'] = '$0 font-display: auto; ';
                 
                 $rep['/location.protocol\+"\/\/"\+location.host\+/'] = '(/'.$proxyLazyHrefs.'/.test(e) ? "'.$prefix.'" : "'.$domain.'")+';
                 if (strlen($proxyStringHrefs) > 0) {
