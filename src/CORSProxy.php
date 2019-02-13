@@ -109,8 +109,8 @@ class CORSProxy {
                 $rep['/src="'.$exclusionExpr.$forceProxyExpr.'/']   = 'src="'.$prefix;
                 $rep['/@import[\n+\s+]"\//'] = '@import "'.$domain;
                 $rep['/@import[\n+\s+]"\./'] = '@import "'.$domain;
-                $rep['/@font-face \{/'] = '$0 font-display: auto; ';
-                
+                $rep['/@font-face \{/'] = "$0\n  font-display: fallback; ";
+                                    
                 $rep['/location.protocol\+"\/\/"\+location.host\+/'] = '(/'.$proxyLazyHrefs.'/.test(e) ? "'.$prefix.'" : "'.$domain.'")+';
                 if (strlen($proxyStringHrefs) > 0) {
                     $rep['/"('.$proxyStringHrefs.')"/'] = '"'.$prefix.'$1"';
