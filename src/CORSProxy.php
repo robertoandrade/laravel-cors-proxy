@@ -62,7 +62,9 @@ class CORSProxy {
             $request->headers->remove('host');
             $request->headers->remove('accept-encoding');
 
-            if (isset($_COOKIE['skipCookies']) && 
+            if (isset($_REQUEST['skipCookies']) && 
+                $_REQUEST['skipCookies'] == 'true' ||
+                isset($_COOKIE['skipCookies']) && 
                 ($_COOKIE['skipCookies'] == 'true' || 
                  $_COOKIE['skipCookies'] == $_SERVER['QUERY_STRING']
                 )) {
