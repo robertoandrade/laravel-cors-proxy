@@ -60,6 +60,7 @@ class CORSProxy {
                 'verify' => false
             ]);
             $request->headers->remove('host');
+            $request->headers->remove('origin');
             $request->headers->remove('accept-encoding');
 
             if (isset($_REQUEST['skipCookies']) && 
